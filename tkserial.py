@@ -71,6 +71,16 @@ def send_data(command):
         # get the text from the entry box
         gbl_ser_con.write(command.encode())
 
+# add text to the text box
+def add_line(line):
+    # if line has no end of line, add it
+    if not line.endswith('\n'):
+        line += '\n'
+    tk_text.config(state=tk.NORMAL)
+    tk_text.insert(tk.END, line)
+    tk_text.see(tk.END)
+    tk_text.config(state=tk.DISABLED)
+
 def read_data():
     global gbl_ser_con
     while True:
@@ -80,14 +90,11 @@ def read_data():
                 data = gbl_ser_con.readline()
                 if data:
                     # make the text box editable
-                    text.config(state=tk.NORMAL)
-                    text.insert(tk.END, data.decode())
-                    # make the text box not editable
-                    text.see(tk.END)
-                    text.config(state=tk.DISABLED)
+                    add_line(data.decode())
                 time.sleep(0.01)
             except serial.SerialException:
                 print("Serial Exception")
+                add_line("Serial Exception")
                 gbl_ser_con = None
                 break
         else :
@@ -98,9 +105,9 @@ def connect(port):
     global gbl_ser_con
     gbl_ser_con = serial.Serial(port, glb_baud_rate, timeout=1)
     # add connected to textboard
-    text.config(state=tk.NORMAL)
-    text.insert(tk.END, "Connected to " + port + "\n")
-    text.config(state=tk.DISABLED)
+    tk_text.config(state=tk.NORMAL)
+    tk_text.insert(tk.END, "Connected to " + port + "\n")
+    tk_text.config(state=tk.DISABLED)
 
     # start a thread to read data from the serial port
     glb_read_thread = threading.Thread(target=read_data)
@@ -170,10 +177,10 @@ menubar.add_cascade(label="Baud Rate", menu=baud_menu)
 
 
 # create the text box, that scales with the window, not editable
-text = tk.Text(root)
-text.pack(fill=tk.BOTH, expand=True)
+tk_text = tk.Text(root)
+tk_text.pack(fill=tk.BOTH, expand=True)
 # make text not editable
-text.config(state=tk.DISABLED)
+tk_text.config(state=tk.DISABLED)
 
 # create the entry box, that scales with the width of the window
 entry_widget = tk.Entry(root)
