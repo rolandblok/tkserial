@@ -12,11 +12,16 @@ import tkinter as tk
 import serial
 import time
 
+baud_rates = [9600, 19200, 38400, 57600, 115200]
+
 gbl_ser_con = None
-glb_speed = 115200
+glb_baud_rate = 115200
 glb_read_thread = None
 glb_command_history = []
 glb_current_command_index = -1
+
+# print version ktinter
+print(tk.TkVersion)
 
 def execute_command(event):
     global current_command_index, glb_current_command_index
@@ -91,7 +96,7 @@ def read_data():
 # connect to a serial port
 def connect(port):
     global gbl_ser_con
-    gbl_ser_con = serial.Serial(port, glb_speed, timeout=1)
+    gbl_ser_con = serial.Serial(port, glb_baud_rate, timeout=1)
     # add connected to textboard
     text.config(state=tk.NORMAL)
     text.insert(tk.END, "Connected to " + port + "\n")
@@ -101,8 +106,23 @@ def connect(port):
     glb_read_thread = threading.Thread(target=read_data)
     glb_read_thread.start()
     # set the title of the window to the port name
-    root.title("Serial Terminal connected to " + port)
+    root.title("Serial Terminal connected to " + port + " at " + str(glb_baud_rate) + " baud")
 
+# set the baud rate
+def set_baud_rate(rate):
+    global glb_baud_rate
+    glb_baud_rate = rate
+    print("Baud rate set to " + str(rate))
+    # set the title of the window to the port name
+    root.title("Serial Terminal " + str(rate))
+    # Reset all menu items to default background color
+    for index, r in enumerate(baud_rates):
+        if r == glb_baud_rate:
+            baud_menu.entryconfig(index+1, background='lightblue')
+        else:
+            baud_menu.entryconfig(index+1, background='SystemMenu')
+
+# stop the thread and close the serial port            
 def stop_thread():
     global gbl_ser_con
     if gbl_ser_con:
@@ -113,6 +133,7 @@ def stop_thread():
     if glb_read_thread:
         glb_read_thread.join()
 
+# close the window
 def quit():
     stop_thread()
     root.quit()
@@ -129,19 +150,24 @@ root.config(menu=menubar)
 file_menu = tk.Menu(menubar)
 # add a quit command which will stop the thread and close the window
 file_menu.add_command(label="Quit", command=quit)
-menubar.add_cascade(
-    label="File",
-    menu=file_menu
-)
+menubar.add_cascade(label="File", menu=file_menu)
 
-# list all serial ports
+# list all serial ports and create serial selection menu
 ports = list_ports()
 serial_menu = tk.Menu(menubar)
 for port, desc, hwid in sorted(ports):
     serial_menu.add_command(label=port, command=lambda port=port: connect(port))
 serial_menu.add_separator()
 serial_menu.add_command(label="Disconnect", command=stop_thread)
-menubar.add_cascade(label="Serial Ports", menu=serial_menu)
+menubar.add_cascade(label="Connect Serial", menu=serial_menu)
+
+# Create a baud rate menu
+baud_menu = tk.Menu(menubar)
+for r in baud_rates:
+    baud_menu.add_command(label=str(r), command=lambda rate=r: set_baud_rate(rate))
+set_baud_rate(glb_baud_rate)
+menubar.add_cascade(label="Baud Rate", menu=baud_menu)
+
 
 # create the text box, that scales with the window, not editable
 text = tk.Text(root)
