@@ -105,9 +105,7 @@ def connect(port):
     global gbl_ser_con
     gbl_ser_con = serial.Serial(port, glb_baud_rate, timeout=1)
     # add connected to textboard
-    tk_text.config(state=tk.NORMAL)
-    tk_text.insert(tk.END, "Connected to " + port + "\n")
-    tk_text.config(state=tk.DISABLED)
+    add_line("Connected to " + port)
 
     # start a thread to read data from the serial port
     glb_read_thread = threading.Thread(target=read_data)
@@ -135,6 +133,8 @@ def stop_thread():
     if gbl_ser_con:
         gbl_ser_con.close()
         gbl_ser_con = None
+        root.title("Serial Terminal disconnected, " + str(glb_baud_rate) + " baud")
+        add_line("Disconnected")
         print("Disconnected")
     # stop the thread
     if glb_read_thread:
