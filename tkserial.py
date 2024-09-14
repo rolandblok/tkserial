@@ -145,6 +145,29 @@ def quit():
     stop_thread()
     root.quit()
 
+def menu_ports():
+    # list all serial ports and create serial selection menu
+    ports = list_ports()
+
+    # Check if the serial_menu already exists, if not, create it
+    if 'serial_menu' not in globals():
+        global serial_menu
+        serial_menu = tk.Menu(menubar)
+        menubar.add_cascade(label="Connect Serial", menu=serial_menu)
+
+    # Clear the existing menu items
+    serial_menu.delete(0, tk.END)
+
+    # Add new items to the menu
+    for port, desc, hwid in sorted(ports):
+        serial_menu.add_command(label=port, command=lambda port=port: connect(port))
+    
+    # Add a separator and a disconnect option
+    serial_menu.add_separator()
+    serial_menu.add_command(label="Disconnect", command=stop_thread)
+
+    
+
 # create the main window, 
 root = tk.Tk()
 root.title("Serial Terminal - no connection")
@@ -159,15 +182,6 @@ file_menu = tk.Menu(menubar)
 file_menu.add_command(label="Quit", command=quit)
 menubar.add_cascade(label="File", menu=file_menu)
 
-# list all serial ports and create serial selection menu
-ports = list_ports()
-serial_menu = tk.Menu(menubar)
-for port, desc, hwid in sorted(ports):
-    serial_menu.add_command(label=port, command=lambda port=port: connect(port))
-serial_menu.add_separator()
-serial_menu.add_command(label="Disconnect", command=stop_thread)
-menubar.add_cascade(label="Connect Serial", menu=serial_menu)
-
 # Create a baud rate menu
 baud_menu = tk.Menu(menubar)
 for r in baud_rates:
@@ -175,6 +189,11 @@ for r in baud_rates:
 set_baud_rate(glb_baud_rate)
 menubar.add_cascade(label="Baud Rate", menu=baud_menu)
 
+# Create a serial menu
+serial_menu = tk.Menu(menubar, postcommand=menu_ports)
+# Add a list of serial ports    
+menu_ports()
+menubar.add_cascade(label="Connect Serial", menu=serial_menu)
 
 # create the text box, that scales with the window, not editable
 tk_text = tk.Text(root)
