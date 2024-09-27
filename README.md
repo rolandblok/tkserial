@@ -11,3 +11,10 @@ Then start the program. Install libraries that are needed.
 python tkserial.py
 ```
 Extend it anyway usefull for you.
+
+
+## trouble shooting
+linux : permission denied : add <user> to
+```
+sudo usermod -aG dialout USER
+```

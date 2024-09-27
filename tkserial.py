@@ -125,7 +125,7 @@ def set_baud_rate(rate):
         if r == glb_baud_rate:
             baud_menu.entryconfig(index+1, background='lightblue')
         else:
-            baud_menu.entryconfig(index+1, background='SystemMenu')
+            baud_menu.entryconfig(index+1, background='gray')
 
 # stop the thread and close the serial port            
 def stop_thread():
