@@ -7,7 +7,6 @@
 
 
 
-import threading
 import tkinter as tk
 import serial
 import time
@@ -16,7 +15,6 @@ baud_rates = [9600, 19200, 38400, 57600, 115200]
 
 gbl_ser_con = None
 glb_baud_rate = 115200
-glb_read_thread = None
 glb_command_history = []
 glb_current_command_index = -1
 
@@ -69,7 +67,10 @@ def send_data(command):
     global gbl_ser_con
     if gbl_ser_con:
         # get the text from the entry box
+        print("Sending: " + command)
+        command += '\n'  # add newline to the command
         gbl_ser_con.write(command.encode())
+        gbl_ser_con.flush()
 
 # add text to the text box
 def add_line(line):
@@ -83,35 +84,40 @@ def add_line(line):
 
 def read_data():
     global gbl_ser_con
-    while True:
-        if gbl_ser_con:
-            try:
-                # read data from the serial port
-                data = gbl_ser_con.readline()
-                if data:
-                    # make the text box editable
+    if gbl_ser_con:
+        try:
+            # read data from the serial port
+            # print("read_data: Reading data")
+            data = gbl_ser_con.readline()
+            # print(f"read_data: {data}")
+            if data:
+                # make the text box editable
+                try:
                     add_line(data.decode())
-                time.sleep(0.01)
-            except serial.SerialException:
-                print("Serial Exception")
-                add_line("Serial Exception")
-                gbl_ser_con = None
-                break
-        else :
-            break
+                except UnicodeDecodeError:
+                    add_line("Received undecodable data")   
+            time.sleep(0.01)
+        except serial.SerialException:
+            print("Serial Exception")
+            add_line("Serial Exception")
+            gbl_ser_con = None
     
 # connect to a serial port
 def connect(port):
     global gbl_ser_con
-    gbl_ser_con = serial.Serial(port, glb_baud_rate, timeout=1)
+    gbl_ser_con = serial.Serial(port, glb_baud_rate, timeout=0.1)
     # add connected to textboard
     add_line("Connected to " + port)
 
     # start a thread to read data from the serial port
-    glb_read_thread = threading.Thread(target=read_data)
-    glb_read_thread.start()
+    print("Connected to " + port + " at " + str(glb_baud_rate) + " baud")
+
     # set the title of the window to the port name
     root.title("Serial Terminal connected to " + port + " at " + str(glb_baud_rate) + " baud")
+
+def schedule_read():
+    read_data()
+    root.after(100, schedule_read)
 
 # set the baud rate
 def set_baud_rate(rate):
@@ -136,9 +142,7 @@ def stop_thread():
         root.title("Serial Terminal disconnected, " + str(glb_baud_rate) + " baud")
         add_line("Disconnected")
         print("Disconnected")
-    # stop the thread
-    if glb_read_thread:
-        glb_read_thread.join()
+
 
 # close the window
 def quit():
@@ -220,6 +224,9 @@ entry_widget.bind('<Down>', retrieve_next_command)
 
 # bind the close window
 root.protocol("WM_DELETE_WINDOW", quit)
+
+# start the scheduling
+schedule_read()
 
 # show the window
 root.mainloop()
